@@ -4,8 +4,9 @@ package jkms.jakomas;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-
 public class Main {
+    //объект класса с ошибками
+    static Errors_userInput_sqr e_ui_sqr = new Errors_userInput_sqr();
     public enum LexemeType {
         L_BRACKET, R_BRACKET,//левая и правая скобки
         NUMBER,             //число
@@ -43,16 +44,7 @@ public class Main {
                         lexemeArrayList.add(new Lexeme(LexemeType.OP_L_SQR, "<|"));
                     }
                     else {//если не было подтверждено открытие корня '<' + '|'
-                        throw new RuntimeException("""
-                                
-                                Одиночный символ '<'.
-                                Используется в указании границ подкоренного выражения.
-                                Неправильно "открыт" корень.
-                                
-                                Выражение из под корня имеет вид:
-                                <|  открыть выражение корня.
-                                |>  закрыть выражение корня.
-                                перепроверьте выражение, может быть ошибка.""");
+                        throw new RuntimeException(e_ui_sqr.get_error_sqr_user_input(0));
                     }
                     //если проверка пройдена - идём дальше
                     pos++;
@@ -77,28 +69,10 @@ public class Main {
                         for(Lexeme lt : lexemeArrayList){
                             if(lt.type == LexemeType.OP_L_SQR){
                                 //да, левая скобка корня есть, неверно закрыли
-                                throw new RuntimeException("""
-                                
-                                Одиночный символ '|'.
-                                Используется в указании границ подкоренного выражения.
-                                Неправильно "закрыт" корень.
-                                
-                                Выражение из под корня имеет вид:
-                                <|  открыть выражение корня.
-                                |>  закрыть выражение корня.
-                                перепроверьте выражение, может быть ошибка.""");
+                                throw new RuntimeException(e_ui_sqr.get_error_sqr_user_input(2));
                             } else if (lt.type == LexemeType.OP_R_SQR) {
                                 //нет, до этого уже была правая скобка корня, неверно открыли новую
-                                throw new RuntimeException("""
-                                
-                                Одиночный символ '|'.
-                                Используется в указании границ подкоренного выражения.
-                                Неправильно "открыт" корень.
-                                
-                                Выражение из под корня имеет вид:
-                                <|  открыть выражение корня.
-                                |>  закрыть выражение корня.
-                                перепроверьте выражение, может быть ошибка.""");
+                                throw new RuntimeException(e_ui_sqr.get_error_sqr_user_input(1));
                             }
                         }
 
@@ -124,18 +98,10 @@ public class Main {
                         //это - синтаксическая ошибка пользователя
                         if(ch == '>')
                             //throw new RuntimeException("Неверная запись границ подкоренного выражения.");
-                            throw new RuntimeException("""
-                                
-                                Одиночный символ '>'.
-                                Используется в указании границ подкоренного выражения.
-                                Неправильно "закрыт" корень.
-                                                                
-                                Выражение из под корня имеет вид:
-                                <|  открыть выражение корня.
-                                |>  закрыть выражение корня.
-                                перепроверьте выражение, может быть ошибка.""");
+                            throw new RuntimeException(e_ui_sqr.get_error_sqr_user_input(3));
                             //не скобки не операции не числа - не предусмотрено
-                        throw new RuntimeException("\nНепредусмотренный символ или неизвестная операция: "+ch+" index: "+pos);
+                        else
+                            throw new RuntimeException("\nНепредусмотренный символ или неизвестная операция: "+ch+" index: "+pos);
                     }
                 }
             }
@@ -197,19 +163,16 @@ public class Main {
 
 
 
-
     static int pow(LexemeBuffer lexemeBuffer) {
         int value = factor(lexemeBuffer);
 
         while (true) {
             Lexeme lexeme = lexemeBuffer.getNextLexeme();
-            switch (lexeme.type) {
-                case OP_POW -> { value = (int) Math.pow(value, factor(lexemeBuffer)); }
-                //case OP_SQR -> { value = (int) Math.sqrt(value); }
-                default -> {
-                    lexemeBuffer.backPos();
-                    return value;
-                }
+            if (lexeme.type == LexemeType.OP_POW) {
+                value = (int) Math.pow(value, factor(lexemeBuffer));
+            } else {
+                lexemeBuffer.backPos();
+                return value;
             }
         }
     }
@@ -238,8 +201,8 @@ static int mul_div(LexemeBuffer lexemeBuffer) {
     while (true) {
         Lexeme lexeme = lexemeBuffer.getNextLexeme();//pos++
         switch (lexeme.type) {
-            case OP_MUL -> { value *= pow(lexemeBuffer); }
-            case OP_DIV -> { value /= pow(lexemeBuffer); }
+            case OP_MUL -> value *= pow(lexemeBuffer);
+            case OP_DIV -> value /= pow(lexemeBuffer);
             default -> {
                 lexemeBuffer.backPos();//pos--
                 return value;
@@ -253,8 +216,8 @@ static int mul_div(LexemeBuffer lexemeBuffer) {
         while (true) {
             Lexeme lexeme = lexemeBuffer.getNextLexeme();
             switch (lexeme.type) {
-                case OP_PLUS -> { value += mul_div(lexemeBuffer); }
-                case OP_MINUS -> { value -= mul_div(lexemeBuffer); }
+                case OP_PLUS -> value += mul_div(lexemeBuffer);
+                case OP_MINUS -> value -= mul_div(lexemeBuffer);
                 //не нашли операции сложение/вычитание
                 default -> {
                     lexemeBuffer.backPos();//лексема была взята -> pos++, вернуть обратно
