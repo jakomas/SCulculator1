@@ -5,7 +5,6 @@ public class Errors_userInput_sqr {
     private final String e_open2_op_l_sqr;
     private final String e_close_op_sqr;
     private final String e_close2_op_sqr ;
-
     String[] e_value = {
             e_open_op_l_sqr = """
                                
